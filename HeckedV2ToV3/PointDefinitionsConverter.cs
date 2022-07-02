@@ -15,19 +15,13 @@ namespace HeckedV2ToV3
             }
 
             List<object> pointDefinitions = (List<object>)pointDefinitionsObject;
-            List<Dictionary<string, object>> newPointDefinitions = new();
+            Dictionary<string, object> newPointDefinitions = new();
             foreach (object pointDefinitionObject in pointDefinitions)
             {
                 try
                 {
                     Dictionary<string, object> pointDefinition = (Dictionary<string, object>)pointDefinitionObject;
-                    Dictionary<string, object> newPointDefinition = new()
-                    {
-                        ["name"] = pointDefinition["_name"],
-                        ["points"] = pointDefinition["_points"]
-                    };
-
-                    newPointDefinitions.Add(newPointDefinition);
+                    newPointDefinitions.Add((string)pointDefinition["_name"], pointDefinition["_points"]);
                 }
                 catch (Exception e)
                 {
