@@ -52,8 +52,18 @@ namespace HeckedV2ToV3
                         newEnvironmentDefinition["localPosition"] = ((List<object>)localPositionData).Select(n => System.Convert.ToDouble(n) * 0.6).ToList();
                     }
 
-                    AddIfExist("_lightID", "lightID");
                     AddIfExist("_track", "track");
+
+                    if (environmentDefinition.TryGetValue("_lightID", out object? lightId))
+                    {
+                        newEnvironmentDefinition["components"] = new Dictionary<string, object>
+                        {
+                            ["ILightWithId"] = new Dictionary<string, object>
+                            {
+                                ["lightID"] = lightId
+                            }
+                        };
+                    }
 
                     newEnvironment.Add(newEnvironmentDefinition);
                 }
