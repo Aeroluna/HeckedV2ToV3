@@ -27,6 +27,8 @@ namespace HeckedV2ToV3
                 return;
             }
 
+            bool warnedGradient = false;
+
             Dictionary<int, double[]> legacyColors = new();
             List<Dictionary<string, object>> events = ((List<object>)eventsObject).Cast<Dictionary<string, object>>().ToList();
             List<Dictionary<string, object>> bpmEvents = new();
@@ -166,6 +168,12 @@ namespace HeckedV2ToV3
                             if (!customData.ContainsKey("color")
                                 && customData.TryPopValue("_lightGradient", out object? gradientObject))
                             {
+                                if (!warnedGradient)
+                                {
+                                    warnedGradient = true;
+                                    Console.WriteLine("Attempting to convert [_lightGradient](s), conversion may be imperfect.");
+                                }
+
                                 Dictionary<string, object> gradient = (Dictionary<string, object>)gradientObject!;
                                 customData["color"] = gradient["_startColor"];
                                 customData["easing"] = gradient["_easing"];

@@ -50,7 +50,7 @@ namespace HeckedV2ToV3
 
                         if (customData.TryPopValue("_animation", out object? animation) && animation != null)
                         {
-                            ((Dictionary<string, object?>)animation).ConvertAnimationProperties(true);
+                            ((Dictionary<string, object?>)animation).ConvertAnimationProperties();
                             customData["animation"] = animation;
                         }
 

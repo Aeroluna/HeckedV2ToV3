@@ -21,7 +21,7 @@ namespace HeckedV2ToV3
             {
                 try
                 {
-                    Dictionary<string, object> environmentDefinition = (Dictionary<string, object>)environmentDefinitionObject;
+                    Dictionary<string, object?> environmentDefinition = (Dictionary<string, object?>)environmentDefinitionObject;
                     Dictionary<string, object?> newEnvironmentDefinition = new()
                     {
                         ["id"] = environmentDefinition["_id"],
@@ -42,19 +42,22 @@ namespace HeckedV2ToV3
                     AddIfExist("_rotation", "rotation");
                     AddIfExist("_localRotation", "localRotation");
 
-                    if (environmentDefinition.TryGetValue("_position", out object? positionData))
+                    if (environmentDefinition.TryGetValue("_position", out object? positionData) &&
+                        positionData != null)
                     {
                         newEnvironmentDefinition["position"] = ((List<object>)positionData).Select(n => System.Convert.ToDouble(n) * 0.6).ToList();
                     }
 
-                    if (environmentDefinition.TryGetValue("_localPosition", out object? localPositionData))
+                    if (environmentDefinition.TryGetValue("_localPosition", out object? localPositionData) &&
+                        localPositionData != null)
                     {
                         newEnvironmentDefinition["localPosition"] = ((List<object>)localPositionData).Select(n => System.Convert.ToDouble(n) * 0.6).ToList();
                     }
 
                     AddIfExist("_track", "track");
 
-                    if (environmentDefinition.TryGetValue("_lightID", out object? lightId))
+                    if (environmentDefinition.TryGetValue("_lightID", out object? lightId) &&
+                        lightId != null)
                     {
                         newEnvironmentDefinition["components"] = new Dictionary<string, object>
                         {

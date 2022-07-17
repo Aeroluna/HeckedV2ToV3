@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text.Json;
 
 namespace HeckedV2ToV3
 {
     internal static class CustomEventsConverter
     {
-        internal static void Convert(Dictionary<string, object?> customData)
+        internal static void Convert(Dictionary<string, object?> customData, TrackTracker tracker)
         {
             if (!customData.TryGetValue("_customEvents", out object? customEventsObject) || customEventsObject == null)
             {
@@ -35,7 +36,11 @@ namespace HeckedV2ToV3
                     {
                         case "AnimateTrack":
                         case "AssignPathAnimation":
-                            data.ConvertAnimationProperties(type == "AssignPathAnimation");
+                            if (type == "AnimateTrack")
+                            {
+                                data.ConvertAnimateTrackProperties(tracker);
+                            }
+                            data.ConvertAnimationProperties();
                             data.RenameData("_easing", "easing");
                             data.RenameData("_duration", "duration");
                             data.RenameData("_track", "track");
@@ -45,9 +50,6 @@ namespace HeckedV2ToV3
                             data.RenameData("_worldPositionStays", "worldPositionStays");
                             data.RenameData("_childrenTracks", "childrenTracks");
                             data.RenameData("_parentTrack", "parentTrack");
-                            data.RenameData("_position", "offsetPosition");
-                            data.RenameData("_rotation", "worldRotation");
-                            data.RenameData("_localRotation", "localRotation");
                             data.RenameData("_scale", "scale");
                             break;
 
@@ -55,6 +57,25 @@ namespace HeckedV2ToV3
                         case "AssignFogTrack":
                             data.RenameData("_track", "track");
                             break;
+                    }
+
+                    if (type is "AssignTrackParent" or "AssignPlayerToTrack")
+                    {
+                        List<object>? position = data.PopOrDefault<List<object>>("_position");
+                        List<object>? rotation = data.PopOrDefault<List<object>>("_rotation");
+                        List<object>? localRotation = data.PopOrDefault<List<object>>("_localRotation");
+                        WorldRotationToStandard.ConvertPositions(position, rotation, localRotation, out Vector3? convertedPos, out Vector3? convertedRot);
+                        if (convertedPos.HasValue)
+                        {
+                            Vector3 value = convertedPos.Value;
+                            data["localPosition"] = new[] {value.X, value.Y, value.Z};
+                        }
+
+                        if (convertedRot.HasValue)
+                        {
+                            Vector3 value = convertedRot.Value;
+                            data["localRotation"] = new[] {value.X, value.Y, value.Z};
+                        }
                     }
 
                     newCustomEvents.Add(newCustomEvent);
