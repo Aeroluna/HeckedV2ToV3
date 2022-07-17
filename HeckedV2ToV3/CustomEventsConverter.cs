@@ -15,6 +15,12 @@ namespace HeckedV2ToV3
                 return;
             }
 
+            Dictionary<string, object?>? pointDefinitions = null;
+            if (customData.TryGetValue("pointDefinitions", out object? pointDefinitionsObject) && pointDefinitionsObject != null)
+            {
+                pointDefinitions = (Dictionary<string, object?>)pointDefinitionsObject;
+            }
+
             List<object> customEvents = (List<object>)customEventsObject;
             List<Dictionary<string, object>> newCustomEvents = new();
             foreach (object customEventObject in customEvents)
@@ -24,6 +30,7 @@ namespace HeckedV2ToV3
                     Dictionary<string, object> customEvent = (Dictionary<string, object>)customEventObject;
 
                     string type = (string)customEvent["_type"];
+
                     Dictionary<string, object?> data = (Dictionary<string, object?>)customEvent["_data"];
                     Dictionary<string, object> newCustomEvent = new()
                     {
@@ -35,11 +42,52 @@ namespace HeckedV2ToV3
                     switch (type)
                     {
                         case "AnimateTrack":
-                        case "AssignPathAnimation":
-                            if (type == "AnimateTrack")
+                            HashSet<TrackTracker.TrackType>? trackTypes = tracker.GetTrackType(data);
+                            if (trackTypes != null &&
+                                trackTypes.Contains(TrackTracker.TrackType.FogEvent))
                             {
-                                data.ConvertAnimateTrackProperties(tracker);
+                                Dictionary<string, object?> bloomFogEnvironment = new();
+
+                                void AddIfExistComponent(string old, string newName)
+                                {
+                                    if (data.TryGetValue(old, out object? value))
+                                    {
+                                        bloomFogEnvironment[newName] = value;
+                                    }
+                                }
+
+                                AddIfExistComponent("_attenuation", "attenuation");
+                                AddIfExistComponent("_offset", "offset");
+                                AddIfExistComponent("_startY", "startY");
+                                AddIfExistComponent("_height", "height");
+
+                                Dictionary<string, object?> newdata = new()
+                                {
+                                    ["track"] = data["_track"],
+                                    ["BloomFogEnvironment"] = bloomFogEnvironment
+                                };
+
+                                newCustomEvent["t"] = "AnimateComponent";
+                                newCustomEvent["d"] = newdata;
+
+                                if (data.TryGetValue("_easing", out object? easing))
+                                {
+                                    newdata["easing"] = easing;
+                                }
+
+                                if (data.TryGetValue("_duration", out object? duration))
+                                {
+                                    newdata["duration"] = duration;
+                                }
+
+                                continue;
                             }
+
+                            data.ConvertAnimateTrackProperties(tracker, pointDefinitions);
+                            goto AssignPathAnimation;
+
+                        case "AssignPathAnimation":
+                            AssignPathAnimation:
                             data.ConvertAnimationProperties();
                             data.RenameData("_easing", "easing");
                             data.RenameData("_duration", "duration");
@@ -54,9 +102,24 @@ namespace HeckedV2ToV3
                             break;
 
                         case "AssignPlayerToTrack":
-                        case "AssignFogTrack":
                             data.RenameData("_track", "track");
                             break;
+
+                        case "AssignFogTrack":
+                            if (!customData.TryGetValue("environment", out object? environmentObject) || environmentObject == null)
+                            {
+                                environmentObject = new List<Dictionary<string, object?>>();
+                                customData["environment"] = environmentObject;
+                            }
+
+                            ((List<Dictionary<string, object?>>)environmentObject).Add(new Dictionary<string, object?>
+                            {
+                                ["id"] = ".[0]Environment",
+                                ["lookupMethod"] = "EndsWith",
+                                ["track"] = data["_track"]!
+                            });
+
+                            continue;
                     }
 
                     if (type is "AssignTrackParent" or "AssignPlayerToTrack")

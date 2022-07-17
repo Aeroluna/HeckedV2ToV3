@@ -46,7 +46,7 @@ namespace HeckedV2ToV3
         }
 
         // https://stackoverflow.com/questions/70462758/c-sharp-how-to-convert-quaternions-to-euler-angles-xyz
-        private static Quaternion ToQuaternion(this Vector3 v)
+        public static Quaternion ToQuaternion(this Vector3 v)
         {
             float cy = (float)Math.Cos(v.Z * 0.5);
             float sy = (float)Math.Sin(v.Z * 0.5);
@@ -92,7 +92,7 @@ namespace HeckedV2ToV3
             return angles;
         }
 
-        private static Vector3 ToVector3(this IEnumerable<object> list)
+        public static Vector3 ToVector3(this IEnumerable<object> list)
         {
             List<float> floats = list.Select(Convert.ToSingle).ToList();
             return new Vector3(floats[0], floats[1], floats[2]);

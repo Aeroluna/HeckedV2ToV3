@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
-using System.Text.Json;
+using System.Linq;
 
 namespace HeckedV2ToV3
 {
@@ -13,7 +12,8 @@ namespace HeckedV2ToV3
         {
             Environment,
             Object,
-            NoodleEvent
+            NoodleEvent,
+            FogEvent
         }
 
         internal TrackTracker(IReadOnlyDictionary<string, object?> customData, IReadOnlyDictionary<string, object?> beatmapData)
@@ -49,6 +49,10 @@ namespace HeckedV2ToV3
                                 }
 
                                 AddTrack(data, TrackType.NoodleEvent, "_parentTrack");
+                                break;
+
+                            case "AssignFogTrack":
+                                AddTrack(data, TrackType.FogEvent);
                                 break;
                         }
                     }
@@ -96,24 +100,63 @@ namespace HeckedV2ToV3
             }
         }
 
-        internal HashSet<TrackType>? GetTrackType(Dictionary<string, object?> data, string key = "_track")
+        internal HashSet<TrackType>? GetTrackType(Dictionary<string, object?> dictionary)
         {
-            if (data.TryGetValue(key, out object? trackName) &&
-                trackName != null &&
-                _trackedTracks.TryGetValue((string)trackName, out HashSet<TrackType>? trackType))
+            if (!dictionary.TryGetValue("_track", out object? trackName) ||
+                trackName == null)
             {
-                return trackType;
+                Console.WriteLine("Could not find track name.");
+                return null;
             }
 
+            switch (trackName)
+            {
+                case List<object> list:
+                    IEnumerable<TrackType> result = Enumerable.Empty<TrackType>();
+                    list.ForEach(n =>
+                    {
+                        if (_trackedTracks.TryGetValue((string)n, out HashSet<TrackType>? trackTypes))
+                        {
+                            result = result.Concat(trackTypes);
+                        }
+                    });
+
+                    return new HashSet<TrackType>(result);
+
+                case string name:
+                    if (_trackedTracks.TryGetValue(name, out HashSet<TrackType>? trackType))
+                    {
+                        return trackType;
+                    }
+
+                    break;
+            }
+
+            Console.WriteLine($"Could not find source for track [{trackName}], unused track?");
             return null;
         }
 
         private void AddTrack(Dictionary<string, object?> data, TrackType trackType, string key = "_track")
         {
-            if (data.TryGetValue(key, out object? trackName) &&
-                trackName != null)
+            void Add(string name)
             {
-                GetHashSet((string)trackName).Add(trackType);
+                GetHashSet(name).Add(trackType);
+            }
+
+            if (!data.TryGetValue(key, out object? trackName) || trackName == null)
+            {
+                return;
+            }
+
+            switch (trackName)
+            {
+                case List<object> list:
+                    list.ForEach(n => Add((string)n));
+                    break;
+
+                case string name:
+                    Add(name);
+                    break;
             }
         }
 

@@ -66,9 +66,9 @@ namespace HeckedV2ToV3
                     }
 
                     TrackTracker tracker = new(customData, beatmapData);
-                    CustomEventsConverter.Convert(customData, tracker);
                     PointDefinitionsConverter.Convert(customData);
                     EnvironmentConverter.Convert(customData);
+                    CustomEventsConverter.Convert(customData, tracker);
 
                     Dictionary<string, object?> newBeatmapData = new()
                     {

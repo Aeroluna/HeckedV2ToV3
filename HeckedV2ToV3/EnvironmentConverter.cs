@@ -45,13 +45,13 @@ namespace HeckedV2ToV3
                     if (environmentDefinition.TryGetValue("_position", out object? positionData) &&
                         positionData != null)
                     {
-                        newEnvironmentDefinition["position"] = ((List<object>)positionData).Select(n => System.Convert.ToDouble(n) * 0.6).ToList();
+                        newEnvironmentDefinition["position"] = positionData.ConvertPosition();
                     }
 
                     if (environmentDefinition.TryGetValue("_localPosition", out object? localPositionData) &&
                         localPositionData != null)
                     {
-                        newEnvironmentDefinition["localPosition"] = ((List<object>)localPositionData).Select(n => System.Convert.ToDouble(n) * 0.6).ToList();
+                        newEnvironmentDefinition["localPosition"] = localPositionData.ConvertPosition();
                     }
 
                     AddIfExist("_track", "track");
@@ -82,6 +82,11 @@ namespace HeckedV2ToV3
 
             customData["environment"] = newEnvironment;
             customData.Remove("_environment");
+        }
+
+        private static object? ConvertPosition(this object? o)
+        {
+            return ((List<object>?)o)?.Select(n => System.Convert.ToDouble(n) * 0.6).ToList();
         }
     }
 }
